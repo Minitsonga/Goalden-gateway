@@ -1,9 +1,11 @@
-.env
-.DS_Store
-.idea/
-.vscode/
-*.log
+
+# Dépendances & secrets
 node_modules/
+.env
+.env.*
+!.env.example
 dist/
-build/
-coverage/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
