@@ -1,0 +1,18 @@
+export type ErrorCode =
+  | "VALIDATION_ERROR"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "NOT_FOUND"
+  | "CONFLICT"
+  | "INTERNAL_ERROR"
+  | "SERVICE_UNAVAILABLE";
+
+export const HTTP_TO_CODE: Record<number, ErrorCode> = {
+  400: "VALIDATION_ERROR",
+  401: "UNAUTHORIZED",
+  403: "FORBIDDEN",
+  404: "NOT_FOUND",
+  409: "CONFLICT",
+  500: "INTERNAL_ERROR",
+  503: "SERVICE_UNAVAILABLE"
+};
