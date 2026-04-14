@@ -24,7 +24,7 @@ function parseBool(value: string | undefined, fallback: boolean): boolean {
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: asNumber(process.env.PORT, 3000),
-  userJwtSecret: process.env.USER_JWT_SECRET ?? "dev-user-jwt-secret",
+  userJwtSecret: process.env.USER_JWT_SECRET ?? "",
   authServiceUrl: process.env.AUTH_SERVICE_URL ?? "http://localhost:3001",
   teamServiceUrl: process.env.TEAM_SERVICE_URL ?? "http://localhost:3002"
 };

@@ -19,7 +19,7 @@ npm install
 |---|---|---|
 | `PORT` | `3000` | Port HTTP de la gateway |
 | `NODE_ENV` | `development` | Environnement (`production` desactive l'introspection par defaut) |
-| `USER_JWT_SECRET` | `dev-user-jwt-secret` | Secret de validation JWT utilisateur |
+| `USER_JWT_SECRET` | _(obligatoire)_ | Secret de validation JWT utilisateur |
 | `AUTH_SERVICE_URL` | `http://localhost:3001` | URL du auth-service |
 | `TEAM_SERVICE_URL` | `http://localhost:3002` | URL du team-service |
 | `ENABLE_GRAPHQL_INTROSPECTION` | auto | `true/false` pour forcer l'introspection |
