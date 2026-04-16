@@ -20,10 +20,33 @@ describe("Gateway protected operations", () => {
     const server = createApolloServer({
       authClient: {
         getMe: async () => ({ id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }),
-        logout: async () => true
+        logout: async () => true,
+        register: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        login: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        refresh: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        getServiceToken: async () => "service-token"
       },
       teamClient: {
-        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }]
+        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }],
+        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris" }],
+        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris" }),
+        createSection: async () => ({ id: "s1", name: "Section 1", sport: "Football" }),
+        createTeam: async () => ({ id: "t1", name: "Team 1", category: "Senior", level: "Regional" })
+      },
+      notificationClient: {
+        sendEmail: async () => true
       }
     });
 
@@ -42,10 +65,33 @@ describe("Gateway protected operations", () => {
     const server = createApolloServer({
       authClient: {
         getMe: async () => ({ id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }),
-        logout: async () => true
+        logout: async () => true,
+        register: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        login: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        refresh: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        getServiceToken: async () => "service-token"
       },
       teamClient: {
-        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }]
+        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }],
+        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris" }],
+        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris" }),
+        createSection: async () => ({ id: "s1", name: "Section 1", sport: "Football" }),
+        createTeam: async () => ({ id: "t1", name: "Team 1", category: "Senior", level: "Regional" })
+      },
+      notificationClient: {
+        sendEmail: async () => true
       }
     });
 
@@ -68,10 +114,33 @@ describe("Gateway protected operations", () => {
           email: "ju@example.com",
           displayName: "Ju"
         }),
-        logout: async () => true
+        logout: async () => true,
+        register: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        login: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        refresh: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        getServiceToken: async () => "service-token"
       },
       teamClient: {
-        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }]
+        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }],
+        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris" }],
+        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris" }),
+        createSection: async () => ({ id: "s1", name: "Section 1", sport: "Football" }),
+        createTeam: async () => ({ id: "t1", name: "Team 1", category: "Senior", level: "Regional" })
+      },
+      notificationClient: {
+        sendEmail: async () => true
       }
     });
 
@@ -101,10 +170,33 @@ describe("Gateway schema introspection policy", () => {
     const server = createApolloServer({
       authClient: {
         getMe: async () => ({ id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }),
-        logout: async () => true
+        logout: async () => true,
+        register: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        login: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        refresh: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
+        getServiceToken: async () => "service-token"
       },
       teamClient: {
-        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }]
+        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }],
+        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris" }],
+        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris" }),
+        createSection: async () => ({ id: "s1", name: "Section 1", sport: "Football" }),
+        createTeam: async () => ({ id: "t1", name: "Team 1", category: "Senior", level: "Regional" })
+      },
+      notificationClient: {
+        sendEmail: async () => true
       }
     });
 

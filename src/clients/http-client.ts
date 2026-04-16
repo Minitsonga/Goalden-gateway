@@ -3,6 +3,11 @@ import { createHttpMappedError } from "../errors/error-utils.js";
 
 type JsonObject = Record<string, unknown>;
 
+/**
+ * Tente de parser le corps d'une réponse HTTP en JSON.
+ * Retourne null si le corps est vide ou si le JSON est malformé,
+ * évitant ainsi une exception non gérée lors de la lecture de réponses d'erreur.
+ */
 async function safeJsonParse(response: Response): Promise<JsonObject | null> {
   try {
     const payload = (await response.json()) as JsonObject;
@@ -12,6 +17,26 @@ async function safeJsonParse(response: Response): Promise<JsonObject | null> {
   }
 }
 
+/**
+ * Client HTTP générique utilisé par tous les clients de service (auth, team...).
+ *
+ * Encapsule un appel `fetch` vers un service interne et gère uniformément :
+ * - La construction de l'URL (baseUrl + path)
+ * - L'ajout du header Authorization si un token est fourni
+ * - La sérialisation du body en JSON pour les requêtes POST
+ * - Les erreurs réseau (service injoignable → AppError SERVICE_UNAVAILABLE 503)
+ * - Les réponses HTTP d'erreur (4xx/5xx → AppError avec le code métier correspondant)
+ *
+ * Le type générique T permet à chaque client de typer précisément la réponse attendue.
+ *
+ * Exemple d'utilisation :
+ *   const user = await httpRequest<MeResponse>({
+ *     baseUrl: "http://localhost:3001",
+ *     path: "/api/users/me",
+ *     method: "GET",
+ *     token: userJwt
+ *   });
+ */
 export async function httpRequest<T>(params: {
   baseUrl: string;
   path: string;
@@ -36,6 +61,7 @@ export async function httpRequest<T>(params: {
       body: params.body ? JSON.stringify(params.body) : undefined
     });
   } catch {
+    // Le service cible est injoignable (réseau, DNS, service down)
     throw new AppError({
       code: "SERVICE_UNAVAILABLE",
       statusCode: 503,
@@ -45,6 +71,8 @@ export async function httpRequest<T>(params: {
 
   const payload = await safeJsonParse(response);
   if (!response.ok) {
+    // Le service a répondu mais avec un code d'erreur HTTP (4xx ou 5xx)
+    // On traduit le status HTTP en AppError avec le code métier correspondant
     throw createHttpMappedError({
       statusCode: response.status,
       message:

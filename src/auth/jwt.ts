@@ -2,19 +2,54 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { AppError } from "../errors/app-error.js";
 
+/**
+ * Structure des données contenues dans un JWT utilisateur.
+ * Ces champs sont encodés dans le token par l'auth-service au moment de la connexion.
+ * - sub  : identifiant unique de l'utilisateur (userId)
+ * - email : email de l'utilisateur (optionnel selon la version du token)
+ * - roles : rôles éventuels (non utilisé pour l'instant dans le gateway)
+ */
 export type UserClaims = {
   sub: string;
+  userId?: string;
   email?: string;
   roles?: string[];
 };
 
+/**
+ * Vérifie la signature d'un JWT utilisateur et retourne son contenu décodé.
+ *
+ * La clé de vérification (USER_JWT_SECRET) est la même que celle utilisée
+ * par l'auth-service pour signer le token. Si les deux clés ne correspondent pas,
+ * la vérification échoue.
+ *
+ * Lève une AppError UNAUTHORIZED (401) dans deux cas :
+ * - le token est expiré ou sa signature est invalide
+ * - le payload décodé ne contient pas de champ `sub` (= pas d'userId)
+ */
 export function verifyUserToken(token: string): UserClaims {
   try {
     const decoded = jwt.verify(token, env.userJwtSecret);
-    if (!decoded || typeof decoded !== "object" || typeof decoded.sub !== "string") {
+    if (!decoded || typeof decoded !== "object") {
       throw new Error("Invalid token payload");
     }
-    return decoded as UserClaims;
+
+    // Compat: l'auth-service encode { userId, email } au lieu de { sub, email }.
+    const sub =
+      typeof (decoded as Record<string, unknown>).sub === "string"
+        ? ((decoded as Record<string, unknown>).sub as string)
+        : typeof (decoded as Record<string, unknown>).userId === "string"
+          ? ((decoded as Record<string, unknown>).userId as string)
+          : null;
+
+    if (!sub) {
+      throw new Error("Invalid token payload");
+    }
+
+    return {
+      ...(decoded as Record<string, unknown>),
+      sub
+    } as UserClaims;
   } catch {
     throw new AppError({
       code: "UNAUTHORIZED",
@@ -24,6 +59,17 @@ export function verifyUserToken(token: string): UserClaims {
   }
 }
 
+/**
+ * Extrait le token brut depuis le header HTTP Authorization.
+ *
+ * Le header doit avoir la forme : "Bearer <token>"
+ * Retourne null si le header est absent, mal formé, ou si le schéma n'est pas "Bearer".
+ *
+ * Exemples :
+ *   "Bearer eyJhbGci..."  → retourne "eyJhbGci..."
+ *   "Basic dXNlcjpwYXNz" → retourne null (mauvais schéma)
+ *   undefined             → retourne null (header absent)
+ */
 export function extractBearerToken(rawHeader: string | undefined): string | null {
   if (!rawHeader) {
     return null;
