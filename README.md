@@ -1,70 +1,57 @@
-# Goalden API Gateway
+# Gateway Service
 
-Gateway GraphQL (Apollo Server v5 + TypeScript) pour exposer un point d'entree unique vers les microservices REST.
+Point d'entree GraphQL unique de Goalden. Il orchestre les appels REST vers les microservices metier.
 
-## Prerequis
+## Ce que le service fait
 
-- Node.js `>=20`
-- Services REST accessibles (auth, team)
+- Expose les operations GraphQL publiques et authentifiees.
+- Verifie le JWT utilisateur dans le contexte GraphQL.
+- Relaye les appels vers `auth-service`, `team-service` et `notification-service`.
+- Normalise les erreurs techniques/metier dans un format GraphQL coherent.
 
-## Installation
+## Schema fonctionnel (MVP)
+
+### Queries
+
+- `health` (public)
+- `me` (profil utilisateur)
+- `myTeams` (equipes de l'utilisateur)
+- `clubs` (liste des clubs)
+
+### Mutations
+
+- `register`, `registerWithInvitation`, `login`, `refresh`, `logout`
+- `createClub`, `createSection`, `createTeam`
+- `sendDemoEmail` (envoi interne via notification-service)
+
+## Interactions avec les autres services
+
+### Sortantes (gateway -> autres)
+
+- `auth-service`
+  - `/api/auth/*` et `/api/users/me`
+  - `/internal/service-token` (pour obtenir un JWT service avant appel notification).
+- `team-service`
+  - `/api/me/teams`, `/api/clubs`, creation club/section/team.
+- `notification-service`
+  - `/internal/send-email` (avec JWT service).
+
+### Entrantes (autres -> gateway)
+
+- Le front et les clients externes consomment uniquement ce service en GraphQL.
+
+## Stack technique
+
+- Apollo Server v5 + TypeScript.
+- Clients HTTP REST internes (`auth-client`, `team-client`, `notification-client`).
+- JWT utilisateur + credentials M2M (`GATEWAY_SERVICE_ID` / `GATEWAY_SERVICE_SECRET`).
+
+## Demarrage local
 
 ```bash
 npm install
-```
-
-## Variables d'environnement
-
-| Variable | Defaut | Description |
-|---|---|---|
-| `PORT` | `3000` | Port HTTP de la gateway |
-| `NODE_ENV` | `development` | Environnement (`production` desactive l'introspection par defaut) |
-| `USER_JWT_SECRET` | _(obligatoire)_ | Secret de validation JWT utilisateur |
-| `AUTH_SERVICE_URL` | `http://localhost:3001` | URL du auth-service |
-| `TEAM_SERVICE_URL` | `http://localhost:3002` | URL du team-service |
-| `NOTIFICATION_SERVICE_URL` | `http://localhost:3006` | URL du notification-service |
-| `GATEWAY_SERVICE_ID` | `gateway` | ServiceId M2M utilise par la gateway |
-| `GATEWAY_SERVICE_SECRET` | _(optionnel)_ | Secret correspondant au serviceId (requis si la gateway envoie des emails) |
-| `ENABLE_GRAPHQL_INTROSPECTION` | auto | `true/false` pour forcer l'introspection |
-
-## Scripts
-
-```bash
+cp .env.example .env
 npm run dev
-npm run build
-npm run start
-npm run test
 ```
 
-## API GraphQL MVP
-
-### Query
-
-- `health`: endpoint public de sante
-- `me`: profil utilisateur (JWT requis)
-- `myTeams`: equipes de l'utilisateur (JWT requis)
-- `clubs`: liste des clubs (JWT requis)
-
-### Mutation
-
-- `logout`: cloture de session (JWT requis)
-- `register`: inscription (public)
-- `login`: connexion (public)
-- `refresh`: refresh access token (public)
-- `createClub`: creation club (JWT requis)
-- `createSection`: creation section (JWT requis)
-- `createTeam`: creation equipe (JWT requis)
-- `sendDemoEmail`: envoi email via notification-service (JWT requis)
-
-## Contrat d'erreur
-
-Les erreurs sont normalisees avec:
-
-- `extensions.code` (ex: `UNAUTHORIZED`, `VALIDATION_ERROR`)
-- `extensions.statusCode`
-- `extensions.details` (optionnel)
-
-## Introspection
-
-- Active par defaut hors production
-- En production: desactivee sauf si `ENABLE_GRAPHQL_INTROSPECTION=true`
+Variables importantes: `USER_JWT_SECRET`, `AUTH_SERVICE_URL`, `TEAM_SERVICE_URL`, `NOTIFICATION_SERVICE_URL`, `GATEWAY_SERVICE_ID`, `GATEWAY_SERVICE_SECRET`.
