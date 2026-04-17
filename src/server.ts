@@ -2,6 +2,7 @@ import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { GraphQLError } from "graphql";
 import type { IncomingMessage } from "node:http";
+import type { ApolloServerPlugin } from "@apollo/server";
 import { isIntrospectionEnabled, env } from "./config/env.js";
 import { createContextFromAuthHeader, type GatewayContext } from "./context.js";
 import { toAppError } from "./errors/error-utils.js";
@@ -37,10 +38,36 @@ function getAuthorizationHeader(req: IncomingMessage): string | undefined {
  *   les envoyer au client, ajoutant `extensions.code` et `extensions.statusCode`
  */
 export function createApolloServer(deps: ResolverDependencies = createResolverDependencies()) {
+  const actionLoggerPlugin: ApolloServerPlugin<GatewayContext> = {
+    async requestDidStart() {
+      const startedAt = Date.now();
+      let operationType: string | null = null;
+      let operationName = "anonymous";
+
+      return {
+        async didResolveOperation(ctx) {
+          operationType = ctx.operation?.operation ?? null;
+          operationName = ctx.operationName ?? "anonymous";
+        },
+        async willSendResponse(ctx) {
+          if (operationType !== "mutation") {
+            return;
+          }
+          const durationMs = Date.now() - startedAt;
+          // eslint-disable-next-line no-console
+          console.log(
+            `[gateway] action=mutation operation=${operationName} status=200 durationMs=${durationMs} hasErrors=${Boolean(ctx.response.body.kind === "single" && ctx.response.body.singleResult.errors?.length)}`,
+          );
+        },
+      };
+    },
+  };
+
   return new ApolloServer<GatewayContext>({
     typeDefs,
     resolvers: createResolvers(deps),
     introspection: isIntrospectionEnabled(),
+    plugins: [actionLoggerPlugin],
 
     /**
      * Intercepte toutes les erreurs avant qu'elles soient sérialisées dans la réponse.
