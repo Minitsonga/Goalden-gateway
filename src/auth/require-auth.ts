@@ -31,8 +31,17 @@ export function requireAuth(context: GatewayContext): {
     });
   }
 
+  const userId = context.user.sub ?? context.user.userId;
+  if (!userId) {
+    throw new AppError({
+      code: "UNAUTHORIZED",
+      statusCode: 401,
+      message: "JWT utilisateur invalide."
+    });
+  }
+
   return {
-    userId: context.user.sub,
+    userId,
     token: context.token
   };
 }

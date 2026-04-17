@@ -1,4 +1,5 @@
 import { env } from "../config/env.js";
+import { AppError } from "../errors/app-error.js";
 import { httpRequest } from "./http-client.js";
 
 /** Format de réponse brut renvoyé par GET /api/users/me sur l'auth-service. */
@@ -53,6 +54,12 @@ export interface AuthClient {
   getMe(token: string): Promise<GatewayUser>;
   logout(token: string): Promise<boolean>;
   register(params: { email: string; password: string; displayName: string }): Promise<AuthTokens>;
+  registerWithInvitation(params: {
+    email: string;
+    password: string;
+    displayName: string;
+    invitationCode: string;
+  }): Promise<AuthTokens>;
   login(params: { email: string; password: string }): Promise<AuthTokens>;
   refresh(params: { refreshToken: string }): Promise<AuthTokens>;
   getServiceToken(params: { serviceId: string; serviceSecret: string }): Promise<string>;
@@ -151,6 +158,35 @@ export function createAuthClient(): AuthClient {
       };
     },
 
+    async registerWithInvitation(params: {
+      email: string;
+      password: string;
+      displayName: string;
+      invitationCode: string;
+    }): Promise<AuthTokens> {
+      const data = await httpRequest<AuthTokensResponse>({
+        baseUrl: env.authServiceUrl,
+        path: "/api/auth/register-with-invitation",
+        method: "POST",
+        body: {
+          email: params.email,
+          password: params.password,
+          displayName: params.displayName,
+          invitationCode: params.invitationCode
+        }
+      });
+
+      return {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          displayName: data.user.displayName ?? null
+        }
+      };
+    },
+
     async refresh(params: { refreshToken: string }): Promise<AuthTokens> {
       const data = await httpRequest<AuthTokensResponse>({
         baseUrl: env.authServiceUrl,
@@ -187,7 +223,14 @@ export function createAuthClient(): AuthClient {
       });
 
       const token = data.token ?? data.accessToken ?? data.serviceToken;
-      return String(token ?? "");
+      if (!token) {
+        throw new AppError({
+          code: "SERVICE_UNAVAILABLE",
+          statusCode: 503,
+          message: "Auth service token response does not contain a token"
+        });
+      }
+      return String(token);
     }
   };
 }

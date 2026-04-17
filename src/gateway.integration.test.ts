@@ -26,6 +26,11 @@ describe("Gateway protected operations", () => {
           refreshToken: "refresh",
           user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
         }),
+        registerWithInvitation: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
         login: async () => ({
           accessToken: "access",
           refreshToken: "refresh",
@@ -39,11 +44,24 @@ describe("Gateway protected operations", () => {
         getServiceToken: async () => "service-token"
       },
       teamClient: {
-        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }],
-        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris" }],
-        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris" }),
-        createSection: async () => ({ id: "s1", name: "Section 1", sport: "Football" }),
-        createTeam: async () => ({ id: "t1", name: "Team 1", category: "Senior", level: "Regional" })
+        getMyTeams: async () => [
+          {
+            id: "t1",
+            name: "Team 1",
+            role: "COACH",
+            genderDivision: "MASCULIN",
+            squadNumber: 1,
+            sectionCategory: "SENIOR",
+            sectionName: "Seniors",
+            sectionId: "s1",
+            clubId: "c1",
+            clubName: "Club 1"
+          }
+        ],
+        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris", sport: "Football" }],
+        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris", sport: "Football" }),
+        createSection: async () => ({ id: "s1", name: "Section 1", category: "SENIOR" }),
+        createTeam: async () => ({ id: "t1", name: "Team 1", genderDivision: "MASCULIN", squadNumber: 1 })
       },
       notificationClient: {
         sendEmail: async () => true
@@ -71,6 +89,11 @@ describe("Gateway protected operations", () => {
           refreshToken: "refresh",
           user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
         }),
+        registerWithInvitation: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
         login: async () => ({
           accessToken: "access",
           refreshToken: "refresh",
@@ -84,11 +107,24 @@ describe("Gateway protected operations", () => {
         getServiceToken: async () => "service-token"
       },
       teamClient: {
-        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }],
-        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris" }],
-        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris" }),
-        createSection: async () => ({ id: "s1", name: "Section 1", sport: "Football" }),
-        createTeam: async () => ({ id: "t1", name: "Team 1", category: "Senior", level: "Regional" })
+        getMyTeams: async () => [
+          {
+            id: "t1",
+            name: "Team 1",
+            role: "COACH",
+            genderDivision: "MASCULIN",
+            squadNumber: 1,
+            sectionCategory: "SENIOR",
+            sectionName: "Seniors",
+            sectionId: "s1",
+            clubId: "c1",
+            clubName: "Club 1"
+          }
+        ],
+        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris", sport: "Football" }],
+        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris", sport: "Football" }),
+        createSection: async () => ({ id: "s1", name: "Section 1", category: "SENIOR" }),
+        createTeam: async () => ({ id: "t1", name: "Team 1", genderDivision: "MASCULIN", squadNumber: 1 })
       },
       notificationClient: {
         sendEmail: async () => true
@@ -120,6 +156,11 @@ describe("Gateway protected operations", () => {
           refreshToken: "refresh",
           user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
         }),
+        registerWithInvitation: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
         login: async () => ({
           accessToken: "access",
           refreshToken: "refresh",
@@ -133,11 +174,24 @@ describe("Gateway protected operations", () => {
         getServiceToken: async () => "service-token"
       },
       teamClient: {
-        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }],
-        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris" }],
-        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris" }),
-        createSection: async () => ({ id: "s1", name: "Section 1", sport: "Football" }),
-        createTeam: async () => ({ id: "t1", name: "Team 1", category: "Senior", level: "Regional" })
+        getMyTeams: async () => [
+          {
+            id: "t1",
+            name: "Team 1",
+            role: "COACH",
+            genderDivision: "MASCULIN",
+            squadNumber: 1,
+            sectionCategory: "SENIOR",
+            sectionName: "Seniors",
+            sectionId: "s1",
+            clubId: "c1",
+            clubName: "Club 1"
+          }
+        ],
+        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris", sport: "Football" }],
+        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris", sport: "Football" }),
+        createSection: async () => ({ id: "s1", name: "Section 1", category: "SENIOR" }),
+        createTeam: async () => ({ id: "t1", name: "Team 1", genderDivision: "MASCULIN", squadNumber: 1 })
       },
       notificationClient: {
         sendEmail: async () => true
@@ -176,6 +230,11 @@ describe("Gateway schema introspection policy", () => {
           refreshToken: "refresh",
           user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
         }),
+        registerWithInvitation: async () => ({
+          accessToken: "access",
+          refreshToken: "refresh",
+          user: { id: TEST_USER_ID, email: "ju@example.com", displayName: "Ju" }
+        }),
         login: async () => ({
           accessToken: "access",
           refreshToken: "refresh",
@@ -189,11 +248,24 @@ describe("Gateway schema introspection policy", () => {
         getServiceToken: async () => "service-token"
       },
       teamClient: {
-        getMyTeams: async () => [{ id: "t1", name: "Team 1", role: "COACH" }],
-        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris" }],
-        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris" }),
-        createSection: async () => ({ id: "s1", name: "Section 1", sport: "Football" }),
-        createTeam: async () => ({ id: "t1", name: "Team 1", category: "Senior", level: "Regional" })
+        getMyTeams: async () => [
+          {
+            id: "t1",
+            name: "Team 1",
+            role: "COACH",
+            genderDivision: "MASCULIN",
+            squadNumber: 1,
+            sectionCategory: "SENIOR",
+            sectionName: "Seniors",
+            sectionId: "s1",
+            clubId: "c1",
+            clubName: "Club 1"
+          }
+        ],
+        listClubs: async () => [{ id: "c1", name: "Club 1", city: "Paris", sport: "Football" }],
+        createClub: async () => ({ id: "c1", name: "Club 1", city: "Paris", sport: "Football" }),
+        createSection: async () => ({ id: "s1", name: "Section 1", category: "SENIOR" }),
+        createTeam: async () => ({ id: "t1", name: "Team 1", genderDivision: "MASCULIN", squadNumber: 1 })
       },
       notificationClient: {
         sendEmail: async () => true

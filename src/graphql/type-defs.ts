@@ -1,7 +1,26 @@
 export const typeDefs = `#graphql
   """
-  Etat de disponibilite de la gateway.
+  Niveau / categorie de jeu de la section (liste fermee, alignee team-service).
   """
+  enum SectionCategory {
+    U8
+    U11
+    U13
+    U15
+    U18
+    SENIOR
+    LOISIR
+  }
+
+  """
+  Division masculine / feminine / mixte (compteur d'equipe separe par division).
+  """
+  enum GenderDivision {
+    MASCULIN
+    FEMININ
+    MIXTE
+  }
+
   type HealthStatus {
     """
     Indique si la gateway est disponible.
@@ -43,6 +62,13 @@ export const typeDefs = `#graphql
     Role utilisateur dans cette equipe.
     """
     role: String
+    genderDivision: GenderDivision!
+    squadNumber: Int!
+    sectionCategory: SectionCategory
+    sectionName: String
+    sectionId: ID
+    clubId: ID
+    clubName: String
   }
 
   """
@@ -51,16 +77,17 @@ export const typeDefs = `#graphql
   type Club {
     id: ID!
     name: String!
-    city: String
+    city: String!
+    sport: String!
   }
 
   """
-  Section (sport) appartenant a un club.
+  Section appartenant a un club (0..n). Le sport est porte par le club.
   """
   type Section {
     id: ID!
     name: String!
-    sport: String
+    category: SectionCategory!
   }
 
   """
@@ -77,6 +104,12 @@ export const typeDefs = `#graphql
     password: String!
     displayName: String!
   }
+  input RegisterWithInvitationInput {
+    email: String!
+    password: String!
+    displayName: String!
+    invitationCode: String!
+  }
 
   input LoginInput {
     email: String!
@@ -89,20 +122,20 @@ export const typeDefs = `#graphql
 
   input CreateClubInput {
     name: String!
-    city: String
+    city: String!
+    sport: String!
   }
 
   input CreateSectionInput {
     clubId: ID!
     name: String!
-    sport: String!
+    category: SectionCategory!
   }
 
   input CreateTeamInput {
     sectionId: ID!
     name: String!
-    category: String!
-    level: String!
+    genderDivision: GenderDivision!
   }
 
   input SendEmailInput {
@@ -147,6 +180,7 @@ export const typeDefs = `#graphql
     Inscription via l'auth-service, exposee via la gateway.
     """
     register(input: RegisterInput!): AuthPayload!
+    registerWithInvitation(input: RegisterWithInvitationInput!): AuthPayload!
 
     """
     Connexion via l'auth-service, exposee via la gateway.

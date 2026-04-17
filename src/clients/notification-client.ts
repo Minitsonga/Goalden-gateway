@@ -2,8 +2,11 @@ import { env } from "../config/env.js";
 import { httpRequest } from "./http-client.js";
 
 type SendEmailResponse = {
-  accepted?: boolean;
-  messageId?: string;
+  success?: boolean;
+  data?: {
+    accepted?: boolean;
+    messageId?: string;
+  };
 };
 
 export interface NotificationClient {
@@ -34,7 +37,7 @@ export function createNotificationClient(): NotificationClient {
         }
       });
 
-      return Boolean(data.accepted ?? true);
+      return Boolean(data.data?.accepted);
     }
   };
 }

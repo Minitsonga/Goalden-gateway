@@ -68,6 +68,10 @@ export const env = {
     ((process.env.NODE_ENV ?? "development") === "test" ? "test-gateway-service-secret" : "")
 };
 
+if (env.nodeEnv !== "test" && !env.userJwtSecret) {
+  throw new Error("Missing required environment variable: USER_JWT_SECRET");
+}
+
 /**
  * Indique si l'introspection GraphQL est activée.
  *

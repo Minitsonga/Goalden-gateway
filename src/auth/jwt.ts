@@ -10,7 +10,7 @@ import { AppError } from "../errors/app-error.js";
  * - roles : rôles éventuels (non utilisé pour l'instant dans le gateway)
  */
 export type UserClaims = {
-  sub: string;
+  sub?: string;
   userId?: string;
   email?: string;
   roles?: string[];
@@ -33,23 +33,15 @@ export function verifyUserToken(token: string): UserClaims {
     if (!decoded || typeof decoded !== "object") {
       throw new Error("Invalid token payload");
     }
-
-    // Compat: l'auth-service encode { userId, email } au lieu de { sub, email }.
-    const sub =
-      typeof (decoded as Record<string, unknown>).sub === "string"
-        ? ((decoded as Record<string, unknown>).sub as string)
-        : typeof (decoded as Record<string, unknown>).userId === "string"
-          ? ((decoded as Record<string, unknown>).userId as string)
-          : null;
-
-    if (!sub) {
+    const normalized = decoded as UserClaims;
+    const resolvedUserId = normalized.sub ?? normalized.userId;
+    if (!resolvedUserId || typeof resolvedUserId !== "string") {
       throw new Error("Invalid token payload");
     }
-
     return {
-      ...(decoded as Record<string, unknown>),
-      sub
-    } as UserClaims;
+      ...normalized,
+      sub: resolvedUserId
+    };
   } catch {
     throw new AppError({
       code: "UNAUTHORIZED",

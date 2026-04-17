@@ -2,6 +2,7 @@ import { requireAuth } from "../auth/require-auth.js";
 import { createAuthClient, type AuthClient } from "../clients/auth-client.js";
 import { createNotificationClient, type NotificationClient } from "../clients/notification-client.js";
 import { createTeamClient, type TeamClient } from "../clients/team-client.js";
+import type { GenderDivision, SectionCategory } from "../constants/domain-enums.js";
 import { env } from "../config/env.js";
 import type { GatewayContext } from "../context.js";
 import { AppError } from "../errors/app-error.js";
@@ -98,6 +99,14 @@ export function createResolvers(deps: ResolverDependencies) {
         return deps.authClient.register(args.input);
       },
 
+      registerWithInvitation: async (
+        _parent: unknown,
+        args: { input: { email: string; password: string; displayName: string; invitationCode: string } },
+        _context: GatewayContext
+      ) => {
+        return deps.authClient.registerWithInvitation(args.input);
+      },
+
       login: async (
         _parent: unknown,
         args: { input: { email: string; password: string } },
@@ -116,7 +125,7 @@ export function createResolvers(deps: ResolverDependencies) {
 
       createClub: async (
         _parent: unknown,
-        args: { input: { name: string; city?: string } },
+        args: { input: { name: string; city: string; sport: string } },
         context: GatewayContext
       ) => {
         const { token } = requireAuth(context);
@@ -125,7 +134,7 @@ export function createResolvers(deps: ResolverDependencies) {
 
       createSection: async (
         _parent: unknown,
-        args: { input: { clubId: string; name: string; sport: string } },
+        args: { input: { clubId: string; name: string; category: SectionCategory } },
         context: GatewayContext
       ) => {
         const { token } = requireAuth(context);
@@ -134,11 +143,23 @@ export function createResolvers(deps: ResolverDependencies) {
 
       createTeam: async (
         _parent: unknown,
-        args: { input: { sectionId: string; name: string; category: string; level: string } },
+        args: { input: { sectionId: string; name: string; genderDivision: GenderDivision } },
         context: GatewayContext
       ) => {
         const { token } = requireAuth(context);
-        return deps.teamClient.createTeam(token, args.input);
+        const created = await deps.teamClient.createTeam(token, args.input);
+        return {
+          id: created.id,
+          name: created.name,
+          role: null,
+          genderDivision: created.genderDivision,
+          squadNumber: created.squadNumber,
+          sectionCategory: null,
+          sectionName: null,
+          sectionId: null,
+          clubId: null,
+          clubName: null
+        };
       },
 
       sendDemoEmail: async (

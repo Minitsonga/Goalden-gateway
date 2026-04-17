@@ -1,47 +1,89 @@
+import type { GenderDivision, SectionCategory } from "../constants/domain-enums.js";
+import { isGenderDivision, isSectionCategory } from "../constants/domain-enums.js";
 import { env } from "../config/env.js";
 import { httpRequest } from "./http-client.js";
 
-/** Format de réponse brut renvoyé par GET /api/teams/my sur le team-service. */
+/** Format de réponse brut renvoyé par GET /api/me/teams sur le team-service. */
 type TeamResponse = {
-  id: string;
-  name: string;
-  role?: string; // Le rôle peut être absent si l'utilisateur n'a pas de membership actif
-};
-
-type ClubResponse = {
-  id?: string;
   _id?: string;
+  id?: string;
+  teamId?: string;
   name: string;
-  city?: string;
+  teamName?: string;
+  role?: string;
+  roleInTeam?: string;
+  genderDivision?: string;
+  squadNumber?: number;
+  sectionCategory?: string;
+  sectionName?: string;
+  sectionId?: string;
+  clubId?: string;
+  clubName?: string;
 };
 
-type CreateClubResponse = {
-  data?: ClubResponse;
+type ClubWire = {
   id?: string;
   _id?: string;
   name?: string;
   city?: string;
+  sport?: string;
+};
+
+type CreateClubResponse = {
+  data?: ClubWire;
+  id?: string;
+  _id?: string;
+  name?: string;
+  city?: string;
+  sport?: string;
 };
 
 type CreateSectionResponse = {
-  data?: { id?: string; _id?: string; name?: string; sport?: string };
+  data?: { id?: string; _id?: string; name?: string; category?: string };
 };
 
 type CreateTeamResponse = {
-  data?: { id?: string; _id?: string; name?: string; category?: string; level?: string };
+  data?: {
+    id?: string;
+    _id?: string;
+    name?: string;
+    genderDivision?: string;
+    squadNumber?: number;
+  };
 };
 
+/** Club normalisé côté gateway (ville et sport toujours des chaînes, aligné GraphQL `Club`). */
 export type Club = {
   id: string;
   name: string;
-  city: string | null;
+  city: string;
+  sport: string;
 };
+
+function clubFromWire(
+  row: ClubWire,
+  fallback?: { name: string; city: string; sport: string }
+): Club {
+  return {
+    id: String(row.id ?? row._id ?? ""),
+    name: String(row.name ?? fallback?.name ?? ""),
+    city: String(row.city ?? fallback?.city ?? ""),
+    sport: String(row.sport ?? fallback?.sport ?? "")
+  };
+}
 
 /** Format normalisé exposé par le gateway dans le type GraphQL Team. */
 export type Team = {
   id: string;
   name: string;
   role: string | null; // null explicite plutôt qu'undefined pour GraphQL
+  genderDivision: GenderDivision;
+  squadNumber: number;
+  sectionCategory: SectionCategory | null;
+  sectionName: string | null;
+  sectionId: string | null;
+  clubId: string | null;
+  clubName: string | null;
 };
 
 /**
@@ -51,15 +93,15 @@ export type Team = {
 export interface TeamClient {
   getMyTeams(token: string): Promise<Team[]>;
   listClubs(token: string): Promise<Club[]>;
-  createClub(token: string, params: { name: string; city?: string }): Promise<Club>;
+  createClub(token: string, params: { name: string; city: string; sport: string }): Promise<Club>;
   createSection(
     token: string,
-    params: { clubId: string; name: string; sport: string }
-  ): Promise<{ id: string; name: string; sport: string | null }>;
+    params: { clubId: string; name: string; category: SectionCategory }
+  ): Promise<{ id: string; name: string; category: SectionCategory }>;
   createTeam(
     token: string,
-    params: { sectionId: string; name: string; category: string; level: string }
-  ): Promise<{ id: string; name: string; category: string | null; level: string | null }>;
+    params: { sectionId: string; name: string; genderDivision: GenderDivision }
+  ): Promise<{ id: string; name: string; genderDivision: GenderDivision; squadNumber: number }>;
 }
 
 /**
@@ -73,27 +115,48 @@ export function createTeamClient(): TeamClient {
   return {
     /**
      * Récupère la liste des équipes dont l'utilisateur est membre.
-     * Appelle GET /api/teams/my sur le team-service avec le JWT utilisateur.
+     * Appelle GET /api/me/teams sur le team-service avec le JWT utilisateur.
      * Le team-service retourne uniquement les équipes avec un membership ACTIVE.
      * Utilisé par le resolver GraphQL `myTeams`.
      */
     async getMyTeams(token: string): Promise<Team[]> {
-      const data = await httpRequest<{ teams: TeamResponse[] }>({
+      const data = await httpRequest<{ success: boolean; data: TeamResponse[] }>({
         baseUrl: env.teamServiceUrl,
-        path: "/api/teams/my",
+        path: "/api/me/teams",
         method: "GET",
         token
       });
 
-      return data.teams.map((team) => ({
-        id: team.id,
-        name: team.name,
-        role: team.role ?? null
-      }));
+      return (data.data ?? [])
+        .map((row) => {
+          const id = String(row.teamId ?? row.id ?? row._id ?? "");
+          const name = String(row.teamName ?? row.name ?? "");
+          const gdRaw = row.genderDivision ?? "";
+          const sn = row.squadNumber;
+          if (!id || !name || !isGenderDivision(gdRaw) || typeof sn !== "number") {
+            return null;
+          }
+          const scRaw = row.sectionCategory;
+          const sectionCategory =
+            scRaw != null && isSectionCategory(scRaw) ? scRaw : null;
+          return {
+            id,
+            name,
+            role: row.roleInTeam ?? row.role ?? null,
+            genderDivision: gdRaw,
+            squadNumber: sn,
+            sectionCategory,
+            sectionName: row.sectionName ?? null,
+            sectionId: row.sectionId != null ? String(row.sectionId) : null,
+            clubId: row.clubId != null ? String(row.clubId) : null,
+            clubName: row.clubName ?? null
+          };
+        })
+        .filter((team): team is Team => team != null);
     },
 
     async listClubs(token: string): Promise<Club[]> {
-      const data = await httpRequest<{ data?: ClubResponse[] } | ClubResponse[]>({
+      const data = await httpRequest<{ data?: ClubWire[] } | ClubWire[]>({
         baseUrl: env.teamServiceUrl,
         path: "/api/clubs",
         method: "GET",
@@ -101,14 +164,12 @@ export function createTeamClient(): TeamClient {
       });
 
       const clubs = Array.isArray(data) ? data : (data.data ?? []);
-      return clubs.map((club) => ({
-        id: String(club.id ?? club._id ?? ""),
-        name: club.name,
-        city: club.city ?? null
-      }));
+      return clubs
+        .map((row) => clubFromWire(row))
+        .filter((c) => Boolean(c.id) && Boolean(c.name) && Boolean(c.city) && Boolean(c.sport));
     },
 
-    async createClub(token: string, params: { name: string; city?: string }): Promise<Club> {
+    async createClub(token: string, params: { name: string; city: string; sport: string }): Promise<Club> {
       const data = await httpRequest<CreateClubResponse>({
         baseUrl: env.teamServiceUrl,
         path: "/api/clubs",
@@ -116,22 +177,27 @@ export function createTeamClient(): TeamClient {
         token,
         body: {
           name: params.name,
-          city: params.city
+          city: params.city,
+          sport: params.sport
         }
       });
 
-      const club = data.data ?? data;
-      return {
-        id: String(club.id ?? club._id ?? ""),
-        name: String(club.name ?? params.name),
-        city: (club.city as string | undefined) ?? params.city ?? null
-      };
+      const row: ClubWire =
+        data.data ??
+        ({
+          id: data.id,
+          _id: data._id,
+          name: data.name,
+          city: data.city,
+          sport: data.sport
+        } satisfies ClubWire);
+      return clubFromWire(row, params);
     },
 
     async createSection(
       token: string,
-      params: { clubId: string; name: string; sport: string }
-    ): Promise<{ id: string; name: string; sport: string | null }> {
+      params: { clubId: string; name: string; category: SectionCategory }
+    ): Promise<{ id: string; name: string; category: SectionCategory }> {
       const data = await httpRequest<CreateSectionResponse>({
         baseUrl: env.teamServiceUrl,
         path: `/api/clubs/${params.clubId}/sections`,
@@ -139,22 +205,26 @@ export function createTeamClient(): TeamClient {
         token,
         body: {
           name: params.name,
-          sport: params.sport
+          category: params.category
         }
       });
 
       const section = data.data ?? {};
+      const rawCategory = section.category ?? params.category;
+      const category = isSectionCategory(String(rawCategory))
+        ? (rawCategory as SectionCategory)
+        : params.category;
       return {
         id: String(section.id ?? section._id ?? ""),
         name: String(section.name ?? params.name),
-        sport: (section.sport as string | undefined) ?? params.sport ?? null
+        category
       };
     },
 
     async createTeam(
       token: string,
-      params: { sectionId: string; name: string; category: string; level: string }
-    ): Promise<{ id: string; name: string; category: string | null; level: string | null }> {
+      params: { sectionId: string; name: string; genderDivision: GenderDivision }
+    ): Promise<{ id: string; name: string; genderDivision: GenderDivision; squadNumber: number }> {
       const data = await httpRequest<CreateTeamResponse>({
         baseUrl: env.teamServiceUrl,
         path: `/api/sections/${params.sectionId}/teams`,
@@ -162,17 +232,22 @@ export function createTeamClient(): TeamClient {
         token,
         body: {
           name: params.name,
-          category: params.category,
-          level: params.level
+          genderDivision: params.genderDivision
         }
       });
 
       const team = data.data ?? {};
+      const rawGd = team.genderDivision ?? params.genderDivision;
+      const genderDivision = isGenderDivision(String(rawGd)) ? (rawGd as GenderDivision) : params.genderDivision;
+      if (typeof team.squadNumber !== "number") {
+        throw new Error("[team-client] createTeam: réponse sans squadNumber numérique");
+      }
+      const squadNumber = team.squadNumber;
       return {
         id: String(team.id ?? team._id ?? ""),
         name: String(team.name ?? params.name),
-        category: (team.category as string | undefined) ?? params.category ?? null,
-        level: (team.level as string | undefined) ?? params.level ?? null
+        genderDivision,
+        squadNumber
       };
     }
   };
